@@ -1,0 +1,640 @@
+<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet">
+
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Flipkart Chatbot</title>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
+
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <!-- Your CSS -->
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ url_for('static', filename='style.css')}}"/>
+
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- HTML Sanitizer -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+
+</head>
+
+
+<body>
+
+<div class="container-fluid h-100">
+
+    <div class="row justify-content-center h-100">
+
+        <div class="col-md-8 col-xl-6 chat">
+
+            <div class="card">
+
+
+                <!-- ============================= -->
+                <!-- CHAT HEADER -->
+                <!-- ============================= -->
+
+                <div class="card-header msg_head">
+
+                    <div class="d-flex bd-highlight">
+
+                        <div class="img_cont">
+
+                            <img
+                                src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png"
+                                class="rounded-circle user_img"
+                            >
+
+                            <span class="online_icon"></span>
+
+                        </div>
+
+
+                        <div class="user_info">
+
+                            <span>Flipkart Chatbot</span>
+
+                            <p>Ask me anything!</p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ============================= -->
+                <!-- CHAT MESSAGES -->
+                <!-- ============================= -->
+
+                <div id="messageFormeight"
+                     class="card-body msg_card_body">
+
+                </div>
+
+
+                <!-- ============================= -->
+                <!-- MESSAGE INPUT -->
+                <!-- ============================= -->
+
+                <div class="card-footer">
+
+                    <form id="messageArea"
+                          class="input-group">
+
+                        <input
+                            type="text"
+                            id="text"
+                            name="msg"
+                            placeholder="Type your message..."
+                            autocomplete="off"
+                            class="form-control type_msg"
+                            required
+                        />
+
+                        <div class="input-group-append">
+
+                            <button
+                                type="submit"
+                                id="send"
+                                class="input-group-text send_btn"
+                            >
+
+                                <i class="fas fa-location-arrow"></i>
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+$(document).ready(function() {
+
+
+    // =========================================================
+    // SEND MESSAGE
+    // =========================================================
+
+    $("#messageArea").on("submit", function(event) {
+
+        event.preventDefault();
+
+
+        // -----------------------------------------------------
+        // Get current time
+        // -----------------------------------------------------
+
+        const date = new Date();
+
+        const hour = date.getHours();
+
+        const minute = date.getMinutes();
+
+        const str_time =
+            String(hour).padStart(2, "0") +
+            ":" +
+            String(minute).padStart(2, "0");
+
+
+        // -----------------------------------------------------
+        // Get user message
+        // -----------------------------------------------------
+
+        var rawText = $("#text").val().trim();
+
+
+        // Do nothing if message is empty
+        if (rawText === "") {
+            return;
+        }
+
+
+        // =====================================================
+        // USER MESSAGE
+        // =====================================================
+
+        var userHtml = `
+
+            <div class="d-flex justify-content-end mb-4">
+
+                <div class="msg_cotainer_send">
+
+                    ${escapeHtml(rawText)}
+
+                    <span class="msg_time_send">
+                        ${str_time}
+                    </span>
+
+                </div>
+
+
+                <div class="img_cont_msg">
+
+                    <img
+                        src="https://i.ibb.co/d5b84Xw/Untitled-design.png"
+                        class="rounded-circle user_img_msg"
+                    >
+
+                </div>
+
+            </div>
+
+        `;
+
+
+        // Add user message
+        $("#messageFormeight").append(userHtml);
+
+
+        // Clear input
+        $("#text").val("");
+
+
+        // Scroll to bottom
+        scrollToBottom();
+
+
+        // =====================================================
+        // SHOW LOADING MESSAGE
+        // =====================================================
+
+        var loadingHtml = `
+
+            <div id="loadingMessage"
+                 class="d-flex justify-content-start mb-4">
+
+                <div class="img_cont_msg">
+
+                    <img
+                        src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png"
+                        class="rounded-circle user_img_msg"
+                    >
+
+                </div>
+
+                <div class="msg_cotainer">
+
+                    <span class="typing">
+                        Thinking...
+                    </span>
+
+                </div>
+
+            </div>
+
+        `;
+
+
+        $("#messageFormeight").append(loadingHtml);
+
+        scrollToBottom();
+
+
+        // =====================================================
+        // SEND REQUEST TO FLASK
+        // =====================================================
+
+        $.ajax({
+
+            data: {
+                msg: rawText
+            },
+
+            type: "POST",
+
+            url: "/get"
+
+        })
+
+
+        // =====================================================
+        // SUCCESS
+        // =====================================================
+
+        .done(function(data) {
+
+
+            // Remove loading message
+            $("#loadingMessage").remove();
+
+
+            // -------------------------------------------------
+            // Convert Markdown response to HTML
+            // -------------------------------------------------
+
+            var formattedResponse = marked.parse(data);
+
+
+            // -------------------------------------------------
+            // Sanitize generated HTML
+            // -------------------------------------------------
+
+            formattedResponse =
+                DOMPurify.sanitize(formattedResponse);
+
+
+            // =================================================
+            // BOT MESSAGE
+            // =================================================
+
+            var botHtml = `
+
+                <div class="d-flex justify-content-start mb-4">
+
+                    <div class="img_cont_msg">
+
+                        <img
+                            src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png"
+                            class="rounded-circle user_img_msg"
+                        >
+
+                    </div>
+
+
+                    <div class="msg_cotainer bot_response">
+
+                        <div class="markdown-content">
+
+                            ${formattedResponse}
+
+                        </div>
+
+                        <span class="msg_time">
+                            ${str_time}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            // Add bot response
+            $("#messageFormeight").append(botHtml);
+
+
+            // Scroll to bottom
+            scrollToBottom();
+
+        })
+
+
+        // =====================================================
+        // ERROR
+        // =====================================================
+
+        .fail(function(xhr) {
+
+
+            // Remove loading message
+            $("#loadingMessage").remove();
+
+
+            var errorMessage = `
+
+                <div class="d-flex justify-content-start mb-4">
+
+                    <div class="img_cont_msg">
+
+                        <img
+                            src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png"
+                            class="rounded-circle user_img_msg"
+                        >
+
+                    </div>
+
+
+                    <div class="msg_cotainer">
+
+                        Sorry, something went wrong.
+                        Please try again.
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            $("#messageFormeight").append(errorMessage);
+
+
+            scrollToBottom();
+
+        });
+
+
+    });
+
+
+
+    // =========================================================
+    // ESCAPE HTML
+    // =========================================================
+
+    function escapeHtml(text) {
+
+        return text
+
+            .replace(/&/g, "&amp;")
+
+            .replace(/</g, "&lt;")
+
+            .replace(/>/g, "&gt;")
+
+            .replace(/"/g, "&quot;")
+
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+
+    // =========================================================
+    // SCROLL CHAT TO BOTTOM
+    // =========================================================
+
+    function scrollToBottom() {
+
+        var messageContainer =
+            document.getElementById("messageFormeight");
+
+        messageContainer.scrollTop =
+            messageContainer.scrollHeight;
+
+    }
+
+
+});
+
+</script>
+
+
+<!-- ========================================================= -->
+<!-- MARKDOWN CHAT STYLING -->
+<!-- ========================================================= -->
+
+<style>
+
+
+/* --------------------------------------------------------- */
+/* Bot Response */
+/* --------------------------------------------------------- */
+
+.markdown-content {
+
+    line-height: 1.6;
+
+    font-size: 15px;
+
+}
+
+
+/* --------------------------------------------------------- */
+/* Headings */
+/* --------------------------------------------------------- */
+
+.markdown-content h1 {
+
+    font-size: 22px;
+
+    font-weight: 700;
+
+    margin-top: 5px;
+
+    margin-bottom: 12px;
+
+}
+
+
+.markdown-content h2 {
+
+    font-size: 19px;
+
+    font-weight: 700;
+
+    margin-top: 5px;
+
+    margin-bottom: 10px;
+
+}
+
+
+.markdown-content h3 {
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    margin-top: 5px;
+
+    margin-bottom: 10px;
+
+}
+
+
+/* --------------------------------------------------------- */
+/* Paragraph */
+/* --------------------------------------------------------- */
+
+.markdown-content p {
+
+    margin-bottom: 10px;
+
+}
+
+
+/* --------------------------------------------------------- */
+/* Bold Text */
+/* --------------------------------------------------------- */
+
+.markdown-content strong {
+
+    font-weight: 700;
+
+}
+
+
+/* --------------------------------------------------------- */
+/* Lists */
+/* --------------------------------------------------------- */
+
+.markdown-content ul {
+
+    margin-top: 5px;
+
+    margin-bottom: 12px;
+
+    padding-left: 22px;
+
+}
+
+
+.markdown-content ol {
+
+    margin-top: 5px;
+
+    margin-bottom: 12px;
+
+    padding-left: 25px;
+
+}
+
+
+.markdown-content li {
+
+    margin-bottom: 6px;
+
+}
+
+
+/* --------------------------------------------------------- */
+/* Nested Lists */
+/* --------------------------------------------------------- */
+
+.markdown-content ul ul,
+
+.markdown-content ol ol,
+
+.markdown-content ul ol,
+
+.markdown-content ol ul {
+
+    margin-bottom: 5px;
+
+}
+
+
+/* --------------------------------------------------------- */
+/* Code */
+/* --------------------------------------------------------- */
+
+.markdown-content code {
+
+    background: rgba(0, 0, 0, 0.15);
+
+    padding: 2px 5px;
+
+    border-radius: 4px;
+
+}
+
+
+/* --------------------------------------------------------- */
+/* Horizontal Line */
+/* --------------------------------------------------------- */
+
+.markdown-content hr {
+
+    border: 0;
+
+    border-top: 1px solid rgba(255,255,255,0.3);
+
+    margin: 12px 0;
+
+}
+
+
+/* --------------------------------------------------------- */
+/* Bot message spacing */
+/* --------------------------------------------------------- */
+
+.bot_response {
+
+    max-width: 75%;
+
+}
+
+
+/* --------------------------------------------------------- */
+/* Typing */
+/* --------------------------------------------------------- */
+
+.typing {
+
+    opacity: 0.7;
+
+    font-style: italic;
+
+}
+
+
+</style>
+
+
+</body>
+
+</html>
