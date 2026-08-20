@@ -1,8 +1,24 @@
+from dotenv import load_dotenv
+import os
+
+# Load .env FIRST
+load_dotenv(override=True)
+
 from langchain_astradb import AstraDBVectorStore
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from flipkart.data_converter import DataConverter
 from flipkart.config import Config
+
+
+print("ASTRA ENDPOINT USED BY DATA INGESTION:")
+print(os.getenv("ASTRA_DB_API_ENDPOINT"))
+
+print("CONFIG ENDPOINT:")
+print(Config.ASTRA_DB_API_ENDPOINT)
+
+print("TOKEN EXISTS:")
+print(bool(os.getenv("ASTRA_DB_APPLICATION_TOKEN")))
 
 
 class DataIngestor:
